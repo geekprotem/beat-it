@@ -26,6 +26,7 @@ class ServiceConfig:
     port: int  # PORT or default 8080
     otel_endpoint: str | None  # OTEL_ENDPOINT or None
     otel_prefix: str  # OTEL_PREFIX or default ""
+    otel_export_interval: int  # OTEL_EXPORT_INTERVAL (seconds) or default 60
     apps: list[AppConfig] = field(default_factory=list)  # Parsed APP_NAME_* entries
 
 
@@ -83,11 +84,35 @@ def _parse_interval(name: str, raw: str) -> int | None:
     return value
 
 
+def _parse_otel_export_interval(raw: str | None) -> int:
+    """Parse OTEL_EXPORT_INTERVAL env var as seconds, defaulting to 60."""
+    if raw is None:
+        return 60
+    try:
+        value = int(raw)
+    except ValueError:
+        logger.warning(
+            "OTEL_EXPORT_INTERVAL value %r is not a valid integer, using default 60",
+            raw,
+        )
+        return 60
+    if value <= 0:
+        logger.warning(
+            "OTEL_EXPORT_INTERVAL value %d must be positive, using default 60",
+            value,
+        )
+        return 60
+    return value
+
+
 def load_config() -> ServiceConfig:
     """Read os.environ, filter APP_NAME_* keys, parse values, return config."""
     port = _parse_port(os.environ.get("PORT"))
     otel_endpoint = os.environ.get("OTEL_ENDPOINT") or None
     otel_prefix = os.environ.get("OTEL_PREFIX", "")
+    otel_export_interval = _parse_otel_export_interval(
+        os.environ.get("OTEL_EXPORT_INTERVAL")
+    )
 
     apps: list[AppConfig] = []
     for key, value in os.environ.items():
@@ -104,5 +129,6 @@ def load_config() -> ServiceConfig:
         port=port,
         otel_endpoint=otel_endpoint,
         otel_prefix=otel_prefix,
+        otel_export_interval=otel_export_interval,
         apps=apps,
     )
