@@ -24,6 +24,10 @@ class _LoggingExporterWrapper(MetricExporter):
     """Wraps an exporter to log success/failure after each export."""
 
     def __init__(self, inner: MetricExporter) -> None:
+        super().__init__(
+            preferred_temporality=inner._preferred_temporality,
+            preferred_aggregation=inner._preferred_aggregation,
+        )
         self._inner = inner
 
     def export(self, metrics_data: MetricsData, **kwargs) -> MetricExportResult:
