@@ -29,10 +29,11 @@ def healthcheck_handler() -> PlainTextResponse:
     return PlainTextResponse("ok", status_code=200)
 
 
-@router.get("/heartbeat/{name}")
+@router.api_route("/heartbeat/{name}", methods=["GET", "POST"])
 def heartbeat_handler(name: str) -> PlainTextResponse:
     """Record a heartbeat for the given application name.
 
+    Accepts both GET and POST requests.
     Returns 200 if registered, 400 if the name is not recognized.
     """
     assert _registry is not None
